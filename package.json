@@ -1,0 +1,29 @@
+{
+  "name": "chat-vendas-bot",
+  "version": "1.0.0",
+  "description": "Bot de WhatsApp com IA para atendimento automatizado e relatórios de vendas",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "relatorios": "node src/relatorios.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "ai",
+    "vendas"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "dotenv": "^16.4.7",
+    "node-cron": "^3.0.3",
+    "openai": "^4.73.0",
+    "qrcode-terminal": "^0.12.0",
+    "sqlite3": "^5.1.7",
+    "whatsapp-web.js": "^1.25.0"
+  }
+}
