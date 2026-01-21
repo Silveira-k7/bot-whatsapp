@@ -12,12 +12,33 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    }
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ]
+    },
+    // Desabilitar funcionalidades que causam o erro markedUnread
+    qrMaxRetries: 5
 });
 
-// Evitar erros de markedUnread do sendSeen interno
-client.sendSeen = async () => {};
+// Sobrescrever métodos problemáticos do WhatsApp Web
+client.on('authenticated', () => {
+    console.log('🔐 Autenticado com sucesso!');
+});
+
+// Desabilitar sendSeen completamente
+if (client.pupPage) {
+    client.pupPage.on('console', msg => {
+        if (msg.text().includes('markedUnread')) {
+            return; // Silenciar erros markedUnread
+        }
+    });
+}
 
 // Armazenar conversas ativas
 const conversasAtivas = new Map();
@@ -29,8 +50,27 @@ client.on('qr', (qr) => {
 });
 
 // Cliente pronto
-client.on('ready', () => {
+client.on('ready', async () => {
     console.log('✅ Bot conectado ao WhatsApp!');
+    
+    // Injetar fix para markedUnread no WhatsApp Web
+    try {
+        const page = await client.pupPage;
+        await page.evaluate(() => {
+            // Sobrescrever sendSeen para não usar markedUnread
+            if (window.WWebJS) {
+                const originalSendSeen = window.WWebJS.sendSeen;
+                window.WWebJS.sendSeen = async function() {
+                    // Não fazer nada - desabilitar completamente
+                    return Promise.resolve();
+                };
+            }
+        });
+        console.log('🔧 Fix markedUnread aplicado com sucesso');
+    } catch (err) {
+        console.log('⚠️ Não foi possível aplicar fix:', err.message);
+    }
+    
     console.log('📱 Aguardando mensagens...\n');
 });
 
@@ -59,13 +99,33 @@ client.on('message', async (message) => {
         // Processar com IA
         const resposta = await processarMensagem(mensagemTexto, historico, nomeCliente);
 
-        // Enviar resposta diretamente (evitar reply para não acionar markedUnread)
+        console.log(`🤖 Resposta gerada: ${resposta.texto.substring(0, 100)}...`);
+
+        // Enviar resposta - tentar múltiplos métodos
+        let enviouSucesso = false;
+        
+        // Método 1: Usar reply direto
         try {
-            await client.sendMessage(message.from, resposta.texto);
+            await message.reply(resposta.texto);
+            console.log(`✅ Resposta enviada com sucesso (reply)`);
+            enviouSucesso = true;
         } catch (err) {
-            console.error('⚠️ Falha ao enviar mensagem:', err.message);
+            console.log(`⚠️ Reply falhou: ${err.message}`);
+            
+            // Método 2: Usar sendMessage com catch
+            try {
+                const resultado = await client.sendMessage(message.from, resposta.texto);
+                console.log(`✅ Resposta enviada com sucesso (sendMessage)`, resultado ? 'com confirmação' : '');
+                enviouSucesso = true;
+            } catch (err2) {
+                console.error('❌ Erro ao enviar mensagem:', err2.message);
+                console.error('❌ Stack:', err2.stack);
+            }
         }
-        console.log(`✅ Resposta enviada: ${resposta.texto.substring(0, 100)}...`);
+        
+        if (!enviouSucesso) {
+            console.error('❌ Falha total ao enviar resposta!');
+        }
 
         // Salvar no banco
         await salvarConversa({

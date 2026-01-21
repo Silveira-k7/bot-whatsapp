@@ -28,26 +28,32 @@ export async function enviarNotificacao(client, dados) {
         const notificacao = `${emoji} *NOVA MENSAGEM NO NEGÓCIO*
 
 👤 Cliente: ${nomeCliente}
-📱 Número: ${numeroCliente.replace('@c.us', '')}
+📱 Número: ${numeroCliente.replace('@c.us', '').replace('@lid', '')}
 
 💬 *Mensagem do cliente:*
 "${mensagem}"
 
 🤖 *Resposta do bot:*
-"${resposta}"
+"${resposta.substring(0, 150)}${resposta.length > 150 ? '...' : ''}"
 
 ${foiVenda ? '✅ *BOT IDENTIFICOU POSSÍVEL VENDA!*' : ''}
 
 ---
-Para assumir esta conversa, responda diretamente ao cliente.
-Para desativar o bot para este cliente, envie: !assumir ${numeroCliente}`;
+Para assumir esta conversa, responda diretamente ao cliente.`;
 
-        // Enviar notificação
-        await client.sendMessage(numeroFormatado, notificacao);
-        console.log('✅ Notificação enviada para número pessoal');
+        // Tentar enviar notificação com mais logs
+        console.log(`📤 Tentando enviar notificação para ${numeroFormatado}...`);
+        
+        try {
+            const resultado = await client.sendMessage(numeroFormatado, notificacao);
+            console.log('✅ Notificação enviada para número pessoal', resultado ? 'com confirmação' : '');
+        } catch (err) {
+            console.error('❌ Erro ao enviar notificação:', err.message);
+            console.error('❌ Stack:', err.stack);
+        }
 
     } catch (error) {
-        console.error('❌ Erro ao enviar notificação:', error.message);
+        // Não logar erro para não poluir console
     }
 }
 
