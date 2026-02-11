@@ -66,7 +66,7 @@ function classificarMensagem(mensagem) {
 /**
  * Processa mensagem do cliente usando Google Gemini com cache e fallback
  */
-export async function processarMensagem(mensagem, historico = [], nomeCliente = 'Cliente') {
+export async function processarMensagem(mensagem, historico = [], nomeCliente = 'Cliente', contextoExpandido = null) {
     try {
         // Verificar se já temos resposta em cache para esta mensagem
         const chaveCache = `${nomeCliente}:${mensagem}`;
@@ -86,6 +86,19 @@ export async function processarMensagem(mensagem, historico = [], nomeCliente = 
                 ).join('\n')}\n\n`
                 : '';
 
+            // Adicionar informações do contexto expandido
+            let infoCliente = '';
+            if (contextoExpandido && contextoExpandido.resumo) {
+                const { total_mensagens, total_compras } = contextoExpandido.resumo;
+                if (total_mensagens > 0) {
+                    infoCliente = `[Cliente com ${total_mensagens} interações`;
+                    if (total_compras > 0) {
+                        infoCliente += `, já comprou ${total_compras}x`;
+                    }
+                    infoCliente += `]\n`;
+                }
+            }
+
             const exemplosConversa = conversasAntigas.length > 0
                 ? `Seu estilo:\n${conversasAntigas.slice(0, 1).map(conv => 
                     conv.substring(0, 300)
@@ -96,7 +109,7 @@ export async function processarMensagem(mensagem, historico = [], nomeCliente = 
 - Casual e calorosa (use "nossa", "oba", "aiii")
 - Emojis naturais 😊💚✨
 - Respostas curtas (2-3 linhas max)
-${exemplosConversa}${contextoHistorico}${nomeCliente}: "${mensagem}"
+${exemplosConversa}${infoCliente}${contextoHistorico}${nomeCliente}: "${mensagem}"
 Responda como vendedora:`;
 
             const result = await model.generateContent(prompt);
