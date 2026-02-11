@@ -47,6 +47,12 @@ async function inicializarDB() {
         )
     `);
 
+    // Criar índices para melhorar performance
+    await dbRun(`CREATE INDEX IF NOT EXISTS idx_conversas_numero ON conversas(numero_cliente)`);
+    await dbRun(`CREATE INDEX IF NOT EXISTS idx_conversas_timestamp ON conversas(timestamp)`);
+    await dbRun(`CREATE INDEX IF NOT EXISTS idx_conversas_venda ON conversas(foi_venda)`);
+    await dbRun(`CREATE INDEX IF NOT EXISTS idx_perguntas_pergunta ON perguntas_frequentes(pergunta)`);
+
     console.log('✅ Banco de dados inicializado');
 }
 
@@ -270,18 +276,24 @@ async function buscarContextoExpandido(numero, mensagensRecentes = 5, incluirHis
 
         contexto.resumo = stats;
 
-        // Categorias de perguntas deste cliente
-        const categorias = await dbAll(`
-            SELECT DISTINCT categoria, COUNT(*) as total
-            FROM conversas c
-            JOIN perguntas_frequentes pf ON pf.pergunta = c.mensagem
-            WHERE c.numero_cliente = ?
+        // Categorias mais comuns nas mensagens deste cliente
+        // Evita JOIN para melhor performance - busca categorias das perguntas frequentes separadamente
+        const categoriasCliente = await dbAll(`
+            SELECT categoria, COUNT(*) as total
+            FROM perguntas_frequentes
+            WHERE pergunta IN (
+                SELECT DISTINCT mensagem 
+                FROM conversas 
+                WHERE numero_cliente = ? 
+                LIMIT 20
+            )
             GROUP BY categoria
             ORDER BY total DESC
+            LIMIT 5
         `, [numero]);
 
         contexto.padroes = {
-            categorias_interesse: categorias.map(c => c.categoria),
+            categorias_interesse: categoriasCliente.map(c => c.categoria),
             eh_cliente_recorrente: stats.total_compras > 0,
             frequencia_compra: stats.total_compras || 0
         };
@@ -303,8 +315,7 @@ async function obterMelhoresConversas(limite = 50) {
             c.resposta,
             c.foi_venda,
             c.valor_venda,
-            c.timestamp,
-            COUNT(*) OVER (PARTITION BY c.numero_cliente) as total_interacoes
+            c.timestamp
         FROM conversas c
         WHERE c.resposta IS NOT NULL
         AND (
