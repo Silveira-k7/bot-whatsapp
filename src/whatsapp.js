@@ -2,7 +2,7 @@ import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import { processarMensagem } from './ia.js';
-import { salvarConversa, buscarHistoricoCliente, atualizarMetricasDiarias } from './database.js';
+import { salvarConversa, buscarHistoricoCliente, buscarContextoExpandido, atualizarMetricasDiarias } from './database.js';
 import { enviarNotificacao } from './notificacoes.js';
 import dotenv from 'dotenv';
 
@@ -93,11 +93,12 @@ client.on('message', async (message) => {
             return;
         }
 
-        // Buscar histórico do cliente
+        // Buscar histórico e contexto expandido do cliente
         const historico = await buscarHistoricoCliente(numeroCliente);
+        const contextoExpandido = await buscarContextoExpandido(numeroCliente, 5, true);
 
-        // Processar com IA
-        const resposta = await processarMensagem(mensagemTexto, historico, nomeCliente);
+        // Processar com IA (passa contexto adicional)
+        const resposta = await processarMensagem(mensagemTexto, historico, nomeCliente, contextoExpandido);
 
         console.log(`🤖 Resposta gerada: ${resposta.texto.substring(0, 100)}...`);
 

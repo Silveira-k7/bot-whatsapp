@@ -6,6 +6,9 @@ Bot inteligente que responde clientes via WhatsApp, aprende com conversas anteri
 
 ✅ Responde clientes de forma humana e natural  
 ✅ Aprende com conversas anteriores da sua mãe  
+✅ Salva TODAS as conversas em banco de dados  
+✅ Mantém contexto e ritmo das conversas  
+✅ Exporta conversas para retreinamento contínuo  
 ✅ Notifica número pessoal quando recebe mensagem  
 ✅ Gera relatórios de vendas e atendimentos  
 ✅ Funciona 24/7 automaticamente  
@@ -81,6 +84,34 @@ Para gerar relatório manual:
 ```bash
 npm run relatorios
 ```
+
+## 🧠 Treinamento e Aprendizado
+
+O bot aprende continuamente com conversas reais! Para exportar conversas para retreinamento:
+
+```bash
+npm run exportar-conversas
+```
+
+Isso exporta:
+- ✅ Últimas 100 conversas gerais
+- ✅ 50 conversas com vendas bem-sucedidas
+- ✅ 30 melhores conversas (alta qualidade)
+
+Os arquivos são salvos em `src/conversas_antigas/` e automaticamente usados para treinar o bot.
+
+📚 **Leia mais:** Veja [TREINAMENTO.md](TREINAMENTO.md) para guia completo de como o bot aprende.
+
+## 🤖 Escolhendo o Modelo de IA
+
+Não sabe qual modelo usar? Veja nossa análise completa:
+
+📖 **[COMPARACAO_MODELOS.md](COMPARACAO_MODELOS.md)** - Guia completo comparando:
+- OpenAI GPT-4o-mini (Recomendado)
+- Google Gemini (Gratuito)
+- Claude, GPT-4 e outros
+
+Inclui análise de custo, qualidade, latência e recomendações para cada cenário.
 
 ## 📱 Notificações
 
