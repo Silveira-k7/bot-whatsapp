@@ -21,17 +21,6 @@ Bot inteligente que responde clientes via WhatsApp, aprende com conversas anteri
 - ❌ Pago (~$0.002 por mensagem)
 - 📝 Criar conta: https://platform.openai.com/
 
-### 2. **Google Gemini**
-- ✅ GRATUITO (com limites)
-- ✅ Boa qualidade
-- ❌ Pode ter fila em horários de pico
-- 📝 Criar conta: https://makersuite.google.com/
-
-### 3. **Anthropic Claude**
-- ✅ Excelente qualidade
-- ❌ Pago
-- 📝 Criar conta: https://console.anthropic.com/
-
 ## 🚀 Como começar
 
 ### 1. Instalar dependências
@@ -77,13 +66,8 @@ Vai aparecer um QR Code - escaneie com o WhatsApp Business da sua mãe.
 O bot gera relatórios automáticos com:
 - Total de clientes atendidos
 - Vendas realizadas
-- Perguntas mais frequentes
 - Horários de maior movimento
 
-Para gerar relatório manual:
-```bash
-npm run relatorios
-```
 
 ## 🧠 Treinamento e Aprendizado
 
@@ -100,18 +84,12 @@ Isso exporta:
 
 Os arquivos são salvos em `src/conversas_antigas/` e automaticamente usados para treinar o bot.
 
-📚 **Leia mais:** Veja [TREINAMENTO.md](TREINAMENTO.md) para guia completo de como o bot aprende.
-
 ## 🤖 Escolhendo o Modelo de IA
 
 Não sabe qual modelo usar? Veja nossa análise completa:
-
-📖 **[COMPARACAO_MODELOS.md](COMPARACAO_MODELOS.md)** - Guia completo comparando:
 - OpenAI GPT-4o-mini (Recomendado)
 - Google Gemini (Gratuito)
 - Claude, GPT-4 e outros
-
-Inclui análise de custo, qualidade, latência e recomendações para cada cenário.
 
 ## 📱 Notificações
 
@@ -141,3 +119,5 @@ Edite `src/config/personalidade.js` para ajustar:
 2. **Ajustes**: Adicione exemplos de conversas que funcionaram bem
 3. **Palavras-chave**: Configure palavras que exigem intervenção humana
 4. **Horários**: Configure horário comercial no .env
+
+##Desenvolvido por João Pedro da Silveira
