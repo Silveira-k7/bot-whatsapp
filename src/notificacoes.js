@@ -24,22 +24,13 @@ export async function enviarNotificacao(client, dados) {
         // Emoji baseado no tipo de mensagem
         const emoji = foiVenda ? '🎉💰' : '💬';
 
-        // Criar mensagem de notificação
-        const notificacao = `${emoji} *NOVA MENSAGEM NO NEGÓCIO*
-
-👤 Cliente: ${nomeCliente}
-📱 Número: ${numeroCliente.replace('@c.us', '').replace('@lid', '')}
-
-💬 *Mensagem do cliente:*
-"${mensagem}"
-
-🤖 *Resposta do bot:*
-"${resposta.substring(0, 150)}${resposta.length > 150 ? '...' : ''}"
-
-${foiVenda ? '✅ *BOT IDENTIFICOU POSSÍVEL VENDA!*' : ''}
-
----
-Para assumir esta conversa, responda diretamente ao cliente.`;
+        // Criar mensagem de notificação COMPACTA com número do cliente
+        const numeroLimpo = numeroCliente.replace('@c.us', '');
+        const notificacao = `${emoji} *NOVA MENSAGEM*
+👤 ${nomeCliente} (${numeroLimpo})
+💬 "${mensagem}"
+🤖 "${resposta.substring(0, 80)}${resposta.length > 80 ? '...' : ''}"
+${foiVenda ? '✅ POSSÍVEL VENDA!' : ''}`;
 
         // Tentar enviar notificação com mais logs
         console.log(`📤 Tentando enviar notificação para ${numeroFormatado}...`);
@@ -54,6 +45,39 @@ Para assumir esta conversa, responda diretamente ao cliente.`;
 
     } catch (error) {
         // Não logar erro para não poluir console
+    }
+}
+
+/**
+ * Envia solicitação de atendimento humano
+ */
+export async function enviarSolicitacaoHumana(client, dados) {
+    const { nomeCliente, numeroCliente, mensagem } = dados;
+
+    try {
+        const numeroAdmin = process.env.NUMERO_ADMIN || process.env.NUMERO_NOTIFICACAO;
+
+        if (!numeroAdmin || numeroAdmin === '5511999999999') {
+            console.log('⚠️ Configure NUMERO_ADMIN no arquivo .env');
+            return;
+        }
+
+        const numeroFormatado = numeroAdmin.includes('@c.us')
+            ? numeroAdmin
+            : `${numeroAdmin}@c.us`;
+
+        // Avisos BEM SIMPLES
+        const numLimpo = numeroCliente.replace('@c.us', '').replace('@lid', '');
+        
+        const notificacao = `🆘 ${nomeCliente} | ${numLimpo}
+"${mensagem}"
+
+👉 Responda a esta mensagem para o cliente`;
+
+        await client.sendMessage(numeroFormatado, notificacao);
+        console.log('✅ Solicitação humana enviada para admin');
+    } catch (error) {
+        console.error('❌ Erro ao enviar solicitação humana:', error.message);
     }
 }
 

@@ -6,11 +6,14 @@ import { registrarPergunta } from './database.js';
 dotenv.config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const personalidade = carregarPersonalidade();
+const modeloOpenAI = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const conversasAntigas = carregarConversasAntigas();
 
 async function processarMensagem(mensagem, historico = [], nomeCliente = 'Cliente', contextoExpandido = null) {
     try {
+        // Recarregar personalidade a cada mensagem para obter data/hora atual
+        const personalidade = carregarPersonalidade();
+        
         const contextoHistorico = historico.length > 0
             ? `\n\nHistórico de conversas com este cliente:\n${historico.map(h => `Cliente: ${h.mensagem}\nVocê: ${h.resposta}`).join('\n')}`
             : '';
@@ -35,16 +38,16 @@ async function processarMensagem(mensagem, historico = [], nomeCliente = 'Client
             ? `\n\nExemplos de como você costuma conversar:\n${conversasAntigas.join('\n\n')}`
             : '';
 
-        const systemPrompt = `${personalidade.instrucoes}\n\n${personalidade.informacoes}\n\n${contextoTreinamento}\n\nIMPORTANTE:\n- Seja natural, cordial e use emojis moderadamente\n- Responda como a ${personalidade.nome} responderia\n- Se for pergunta sobre preço, informe e tente fechar venda\n- Se não souber algo, seja honesta mas não perca a venda\n- Identifique se a mensagem indica uma venda e marque isso\n- Se o assunto for muito complexo ou delicado, sugira que a dona do negócio entrará em contato\n- Mantenha consistência e ritmo da conversa baseado no histórico\n\n${infoAdicional}${contextoHistorico}`;
+        const systemPrompt = `${personalidade.instrucoes}\n\n${personalidade.informacoes}\n\n${contextoTreinamento}\n\nIMPORTANTE:\n- Seja natural, cordial e use emojis moderadamente\n- Responda como a ${personalidade.nome} responderia\n- SEMPRE ofereça opções quando o cliente perguntar sobre entrega/pedido/retirada\n- Nunca diga "não posso" ou "não faço" - sempre tenha uma solução\n- Se for pergunta sobre preço, informe e tente fechar venda\n- Se tiver dúvida sobre algo específico, PERGUNTE detalhes (endereço, dia, horário) em vez de recusar\n- Identifique se a mensagem indica uma venda e marque isso\n- Se o assunto for muito complexo ou delicado, sugira que a dona do negócio entrará em contato\n- Mantenha consistência e ritmo da conversa baseado no histórico\n- Seja consultiva e ofereça sempre 2-3 opções para o cliente escolher\n\n${infoAdicional}${contextoHistorico}`;
 
         const completion = await openai.chat.completions.create({
-            model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+            model: modeloOpenAI,
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: `${nomeCliente} disse: ${mensagem}` }
             ],
             temperature: 0.8,
-            max_tokens: 300
+            max_tokens: 150
         });
 
         const respostaTexto = completion.choices[0].message.content;
@@ -74,10 +77,10 @@ async function processarMensagem(mensagem, historico = [], nomeCliente = 'Client
 async function analisarConversa(mensagem, resposta) {
     try {
         const completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
+            model: modeloOpenAI,
             messages: [
-                { role: 'system', content: `Analise esta conversa e retorne JSON com:\n{\n  "foiVenda": boolean,\n  "valorVenda": number,\n  "precisaHumano": boolean,\n  "categoria": string\n}` },
-                { role: 'user', content: `Cliente: ${mensagem}\nResposta: ${resposta}` }
+                { role: 'system', content: `Analise se a IA respondeu BEM. Retorne JSON:\n{\n  "foiVenda": boolean,\n  "valorVenda": number,\n  "precisaHumano": boolean,\n  "categoria": string\n}\n\nMarque precisaHumano = true APENAS quando:\n- Resposta tem "vou confirmar", "verificar", "te respondo em breve"\n- Resposta diz que não sabe algo básico sobre produtos/horários\n- Resposta completamente fora do contexto\n\nMarque precisaHumano = false quando:\n- IA respondeu sobre produtos, horários, entregas corretamente\n- IA ofereceu opções e deu informações úteis\n- Resposta faz sentido mesmo que simples` },
+                { role: 'user', content: `Cliente: ${mensagem}\nResposta IA: ${resposta}` }
             ],
             temperature: 0.3,
             response_format: { type: 'json_object' }
