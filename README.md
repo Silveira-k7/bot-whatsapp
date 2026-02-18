@@ -120,4 +120,4 @@ Edite `src/config/personalidade.js` para ajustar:
 3. **Palavras-chave**: Configure palavras que exigem intervenção humana
 4. **Horários**: Configure horário comercial no .env
 
-##Desenvolvido por João Pedro da Silveira
+## Desenvolvido por João Pedro da Silveira
